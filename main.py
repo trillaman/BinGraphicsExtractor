@@ -1,11 +1,11 @@
 import binascii
 import re
 import argparse
-from functools import reduce
+from binascii import hexlify
 
 formatRegex = {'png': '89504E47(.+?)49454E44AE426082',
                'jpg': 'FFD8FFE0(.+?)FFD9',
-               'gif': '47494638(.+?)3B'}
+               'gif': '474946383961(.+?)003B'}
 
 def fileOpen(filename):
     with open(filename, 'rb') as f:
@@ -33,6 +33,13 @@ def extractImages(hex_data, format):
     incInt = 0
     rr = re.findall(format, hex_data)
     formatExtension = getExtension(format)
+
+    if len(rr) > 0:
+        print("Found images in file")
+    else:
+        print("No images found in file")
+        return
+
     for img in rr:
         if img is not None:
             regStart = format.split("(")[0]
@@ -40,11 +47,16 @@ def extractImages(hex_data, format):
             data = regStart + img + regEnd
 
             data = normalizeData(data)
-            data = binascii.a2b_hex(data)
+            try:
+                data = binascii.a2b_hex(data)
+            except binascii.Error:
+                print("Invalid hex data")
+                return
 
             filename = "image" + str(incInt) + "." + formatExtension
 
             writeToFile(filename, data)
+            print("Image number " + str(incInt) + " saved as: " + filename)
             incInt += 1
 
 def getFileExtensions(filename):
@@ -111,3 +123,5 @@ if __name__ == '__main__':
                 args.index), originalExtension, originalName, args.type)
         else:
             print('No index specified')
+
+    
